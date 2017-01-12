@@ -1,0 +1,10 @@
+#define PI 3.1415926535
+ #include "correct_1_1"
+Jakis tekst w pliku correct_1
+	 #define plus(A,B) A+B
+#define minus(a1, a2) a1-a2
+#include "correct_1_2"
+FOR(k,1000)
+plus(PI,(minus(PI,PI)))
+#define f() funkcja_bez_parametrow
+f()

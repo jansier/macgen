@@ -1,0 +1,2 @@
+#define funkcja(a) a.a.a
+funkcja(test

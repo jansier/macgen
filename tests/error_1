@@ -1,0 +1,2 @@
+#define pow(a, b) a^b
+#include "subfolder/error_1_1"
