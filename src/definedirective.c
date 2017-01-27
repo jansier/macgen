@@ -7,23 +7,11 @@
 #include <stdio.h>
 #include "stringhelper.h"
 #include "definedirective.h"
+#include "hashlist.h"
 
-struct Directive {
-	struct Directive *previous;
-	char *name;
-	char *definition;
-	char *parameters[16];
-	int defLine; // defined in line in processed file
-	int prNmb; // number of parameters
-};
-
-void addToDirectives(struct Directive *directive);
 void printDirective(const struct Directive *directive);
 int updateLine(int line, const char *begin, const char *end);
-struct Directive *getDirective(const char *name, int line);
 int resolveParameters(char **er, char **output, struct Directive *directive, const char *insideBrackets, int line);
-
-struct Directive *directives=NULL;
 
 bool isDefineDirective(const char *line, int length) {
 	const char *firstChar;
@@ -305,52 +293,11 @@ int addDirective(char **er, const char *line, int length, int defLine) {
 	}
 }
 
-struct Directive *getDirective(const char *name, int line) {
-	if(directives==NULL || strlen(name)==0) {
-		return NULL;
-	} else {
-		struct Directive *directive;
-		directive = directives;
-		do {
-			directive=directive->previous;
-		} while(strcmp(directive->name, name)!=0 && directive != directives);
-		
-		if(strcmp(directive->name, name)==0 && directive->defLine < line) {
-			return directive;
-		} else {
-			return NULL;
-		}
-	}
-}
-
-void printDirectives() {
-	if(directives==NULL) {
-		printf("Brak dyrektyw\n");
-	} else {
-		struct Directive *directive;
-		directive = directives;
-		do {
-			printDirective(directive->previous);
-			directive=directive->previous;
-		} while(directive != directives);
-	}
-}
-
 void printDirective(const struct Directive *directive) {
 	printf("Dyrektywa wiersz %d|%s|%s|%d Parametry:", directive->defLine, directive->name, directive->definition, directive->prNmb);
 	for(int i=0; i<directive->prNmb; i++)
 		printf(" %s,", directive->parameters[i]);
 	printf("\n");
-}
-
-void addToDirectives(struct Directive *directive) {
-	if(directives==NULL) {
-		directives=directive;
-		directives->previous = directive;
-	} else {
-		directive->previous = directives->previous;
-		directives->previous = directive;
-	}
 }
 
 int updateLine(int line, const char *begin, const char *end) {
