@@ -13,8 +13,8 @@ bool isIncludeDirective(const char *line, int length) {
 	
 	if(firstChar+INCL_LEN<=line+length && memcmp(firstChar, "#include", INCL_LEN)==0) {
 		const char *termChar=firstChar+INCL_LEN;
-		if(*termChar==SPACE || *termChar == TAB || *termChar == ENDLINE) {
-			return true;
+		if((*termChar==SPACE || *termChar == TAB || *termChar == ENDLINE) && *pointFirstChar(termChar)=='"') {
+			return true;			
 		} else {
 			return false;
 		}

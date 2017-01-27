@@ -1,3 +1,5 @@
+#include <cmath>
+#undef ALL
 #define PI 3.1415926535
  #include "correct_1_1"
 Jakis tekst w pliku correct_1
@@ -8,3 +10,17 @@ FOR(k,1000)
 plus(PI,(minus(PI,PI)))
 #define f() funkcja_bez_parametrow
 f()
+#define WWD Wielo \
+Wierszowa \
+Dyrektywa 
+
+Zobaczymy: WWD
+
+#define Q(a, b) a\
+b\
+c
+Q(1,2)
+minus(WWD, WWD)
+#define MAX CSC
+#define MIN MAX
+MIN

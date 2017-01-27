@@ -95,6 +95,25 @@ const char *findClosingBracket(const char *begin, const char *end) {
 		return point;
 }
 
+const char *findNextComma(const char *begin, const char *end) {
+	int numOpened=0; // brackets opened
+	const char *point=begin;
+	while(numOpened!=-1 && point!=end) {
+		point++;
+		if(*point=='(')
+			numOpened++;
+		else if(*point==')')
+			numOpened--;
+		else if(*point==',' && numOpened==0)
+			break;
+	}
+	
+	if(point >= end)
+		return NULL;
+	else
+		return point;
+}
+
 void memsafecpy(char **dest, int *destWritten, int *destSize, const char *begin, int length) {
 	while(*destWritten+length>=*destSize) {
 		*destSize*=2;

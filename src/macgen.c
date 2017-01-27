@@ -108,14 +108,21 @@ void readFile(const char* path) {
 
 	int lineNum=1;
     while ((length = getline(&line, &bufferSize, file)) != -1) {
-        if(isDirective(line)) {
-			if(isIncludeDirective(line, length)) {
-				handleIncludeDirective(line, length, lineNum, basePath);
-			} else if (isDefineDirective(line, length)) {
-				handleDefineDirective(line, length, lineNum);
-			} else {
-				error("Nierozpoznana dyrektywa", lineNum, line);
+		if(isIncludeDirective(line, length)) {
+			handleIncludeDirective(line, length, lineNum, basePath);
+		} else if (isDefineDirective(line, length)) {
+			char *newLine=NULL;
+			while(line[strlen(line)-2]=='\\' && (length += getline(&newLine, &bufferSize, file)-2) != -1) {
+				int destLength=strlen(line)-2;
+				int destSize=destLength;
+				line[destLength]='\0';
+				memsafecpy(&line, &destLength, &destSize, newLine, strlen(newLine));
+				line[destLength]='\0';
+				lineNum++;
+				writeOut("\n", 1);
 			}
+			writeOut("\n", 1);
+			handleDefineDirective(line, length, lineNum);
 		} else {
 			writeOut(line, length);
 		}
@@ -149,21 +156,31 @@ void errorFindLine(const char *path, const int lineEr, char *er) {
     char *line=NULL;
     size_t bufferSize;
     ssize_t length;
-		
+
     if (file == NULL) {
 		errorFile(path);
 	}
 
 	int lineNum=1;
     while ((length = getline(&line, &bufferSize, file)) != -1) {
-        if(isDirective(line)) {
-			if(isIncludeDirective(line, length)) {
-				handleFindLineInclude(line, length, lineNum, lineEr, er, basePath);
-			} else if (isDefineDirective(line, length)) {
-				handleDefineDirective(line, length, lineNum);
-			} else {
-				error("Nierozpoznana dyrektywa", lineNum, line);
+		if(isIncludeDirective(line, length)) {
+			handleFindLineInclude(line, length, lineNum, lineEr, er, basePath);
+		} else if (isDefineDirective(line, length)) {
+			char *newLine=NULL;
+			while(line[strlen(line)-2]=='\\' && (length += getline(&newLine, &bufferSize, file)-2) != -1) {
+				int destLength=strlen(line)-2;
+				int destSize=destLength;
+				line[destLength]='\0';
+				memsafecpy(&line, &destLength, &destSize, newLine, strlen(newLine));
+				line[destLength]='\0';
+				lineNum++;
+				writeOut("\n", 1);
 			}
+			writeOut("\n", 1);
+			if(linesWritten==lineEr) {
+				error(er, lineNum, line);
+			}
+			handleDefineDirective(line, length, lineNum);
 		} else {
 			writeOut(line, length);
 			if(linesWritten==lineEr) {

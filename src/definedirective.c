@@ -22,7 +22,6 @@ void printDirective(const struct Directive *directive);
 int updateLine(int line, const char *begin, const char *end);
 struct Directive *getDirective(const char *name, int line);
 int resolveParameters(char **er, char **output, struct Directive *directive, const char *insideBrackets, int line);
-int resolves=0;
 
 struct Directive *directives=NULL;
 
@@ -51,25 +50,37 @@ int resolveParameters(char **er, char **output, struct Directive *directive,
 	char *parameters[directive->prNmb];
 	int prFound=0;
 	const char *parBegin=insideBrackets;
-	
-	const char *comma = strchr(parBegin, ',');
+	const char *endInsideBrackets = insideBrackets+strlen(insideBrackets)-1;
+
+	const char *comma = findNextComma(parBegin, endInsideBrackets);
 	while(comma!=NULL && prFound<directive->prNmb) {
-		cpandtrm(&parameters[prFound], parBegin, comma-parBegin);
+		char *par;
+		int lineEr = resolveDefineDirectives(er, &par, parBegin, comma-parBegin, line);
+		if(lineEr != 0) { // blad w rozwinieciu parametru
+			return lineEr;
+		}
+		cpandtrm(&parameters[prFound], par, strlen(par));
 		prFound++;
 		parBegin=comma+1;
-		comma = strchr(parBegin, ',');
+		comma = findNextComma(parBegin, endInsideBrackets);
 	}
 	if(prFound==directive->prNmb-1) {
-		cpandtrm(&parameters[prFound], parBegin, strlen(parBegin));
+		char *par;
+		int lineEr = resolveDefineDirectives(er, &par, parBegin, strlen(parBegin), line);
+		if(lineEr != 0) { // blad w rozwinieciu parametru
+			return lineEr;
+		}
+		cpandtrm(&parameters[prFound], par, strlen(par));
 		prFound++;
 	} else {
 		*er = "Nieprawidlowa liczba parametrow";
 		return line;
 	}
+
 	char *buffer;
 	
 	int lineEr = resolveDefineDirectives(er, &buffer, directive->definition,
-					strlen(directive->definition), line);
+					strlen(directive->definition), directive->defLine);
 	if(lineEr != 0) {
 		 // blad w wywolaniu makra w definicji
 		return lineEr;
@@ -111,13 +122,7 @@ int resolveParameters(char **er, char **output, struct Directive *directive,
 	return 0;
 }
 
-int resolveDefineDirectives(char **er, char **output, const char *buffer, int bufferLength, int line) {
-	if(resolves>1000) {
-		*er = "Nastapila petla wywolan dyrektywy define";
-		return line;
-	}
-	resolves++;
-	
+int resolveDefineDirectives(char **er, char **output, const char *buffer, int bufferLength, int line) {	
 	int outputSize=32;
 	int outputWritten=0;
 	*output=malloc(outputSize);
@@ -143,10 +148,17 @@ int resolveDefineDirectives(char **er, char **output, const char *buffer, int bu
 		
 		if(directive!=NULL) { // point wskazuje na namebegin
 			if(directive->prNmb==-1) { //dyrektywa bez nawiasow
-				writeOut=strlen(directive->definition);
-				memsafecpy(output, &outputWritten, &outputSize, directive->definition, writeOut);
+				char *dirResolved; // resolved definition
+				int lineEr = resolveDefineDirectives(er, &dirResolved, directive->definition,
+					strlen(directive->definition), directive->defLine);
+				if(lineEr != 0) { // blad w rozwinieciu definicji dyrektywy
+					return lineEr;
+				}
+
+				writeOut=strlen(dirResolved);
+				memsafecpy(output, &outputWritten, &outputSize, dirResolved, writeOut);
 				point = nameEnd;
-			} else {// dyrektywa z nawiasami
+			} else {// cos z nawiasami
 				const char *openBracket, *closeBracket;
 				openBracket = pointFirstCharInBlock(nameEnd, buffer+bufferLength);
 				if(openBracket == NULL || *openBracket != '(') {
@@ -159,21 +171,25 @@ int resolveDefineDirectives(char **er, char **output, const char *buffer, int bu
 					if(closeBracket == NULL) {
 						*er = "Brak nawiasu zamykajacego )";
 						return line; // nie znaleziono zamykajacego
-					} else if(directive->prNmb==0) { // dyrektywa z 0 parm
+					} else if(directive->prNmb==0) { // dyrektywa z 0 parm				
 						if(pointFirstCharInBlock(openBracket+1, closeBracket+1)!=closeBracket) {
 							*er = "Nieprawidlowa liczba parametrow";
 							return line;
 						} else {
-							writeOut=strlen(directive->definition);
-							memsafecpy(output, &outputWritten, &outputSize, directive->definition, writeOut);
+							char *dirResolved; // resolved definition
+							int lineEr = resolveDefineDirectives(er, &dirResolved, directive->definition,
+								strlen(directive->definition), directive->defLine);
+							if(lineEr != 0) { // blad w rozwinieciu definicji dyrektywy
+								return lineEr;
+							}
+							writeOut=strlen(dirResolved);
+							memsafecpy(output, &outputWritten, &outputSize, dirResolved, writeOut);
 						}
 					} else { // dyrektywa z wieloma par
 						char *insideBrackets;
-						resolveDefineDirectives(er, &insideBrackets, openBracket+1,
-							closeBracket-openBracket-1, line);
+						cpandtrm(&insideBrackets, openBracket+1, closeBracket-openBracket-1);
 						
 						char *processed;
-						
 						int lineEr=resolveParameters(er, &processed, directive, insideBrackets, line);
 						
 						if(lineEr == 0) {

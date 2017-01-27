@@ -18,6 +18,7 @@ bool isDirective(const char *line);
 void getFirstName(const char *blockStart, const char **begin, const char **end, int blockLength);
 const char *pointFirstCharInBlock(const char *begin, const char *end);
 const char *findClosingBracket(const char *begin, const char *end);
+const char *findNextComma(const char *begin, const char *end);
 void memsafecpy(char **dest, int *destWritten, int *destSize, const char *begin, int length);
 void getBasePath(char **basePath, const char *path);
 void getFullPath(char **dest, const char *basePath, const char *filePath);
